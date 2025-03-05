@@ -1,0 +1,39 @@
+# Flask and related packages
+Flask
+Werkzeug
+
+# OpenAI API
+openai
+
+# Streamlit for dashboard
+streamlit
+
+# Database
+SQLAlchemy
+
+# HTTP requests
+requests
+
+# Environment variables
+python-dotenv
+
+# Date handling
+pytz
+
+# Security
+cryptography
+
+# Development tools
+pytest
+black
+flake8
+
+# Production server
+gunicorn
+
+# Instagram API requirements
+instagram-basic-display
+
+# Utilities
+python-dateutil
+tqdm
