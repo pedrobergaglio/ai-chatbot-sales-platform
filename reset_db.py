@@ -13,6 +13,3 @@ def reset_database():
     # Initialize fresh database
     init_db()
     print("New database initialized successfully")
-
-if __name__ == "__main__":
-    reset_database()

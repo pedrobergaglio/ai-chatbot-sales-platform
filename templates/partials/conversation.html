@@ -1,0 +1,131 @@
+<div class="flex flex-col h-full">
+    <!-- Conversation header -->
+    <div class="border-b border-gray-700 p-4 flex justify-between items-center">
+        <div>
+            <h2 class="text-xl font-semibold">{{ user_info.username or 'User ' + sender_id }}</h2>
+            <div class="flex items-center">
+                <span class="text-sm text-gray-400">Status:</span>
+                {% if status == 'human' %}
+                    <span class="ml-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full">Human needed</span>
+                {% else %}
+                    <span class="ml-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full">Handled by AI</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Auto-refresh toggle -->
+        <div class="text-sm">
+            <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="auto-refresh-{{ sender_id }}" class="sr-only" checked>
+                <div class="relative w-11 h-6 bg-gray-700 rounded-full toggle-bg">
+                    <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"></div>
+                </div>
+                <span class="ml-2 text-gray-300">Auto-refresh</span>
+            </label>
+        </div>
+    </div>
+    
+    <!-- Messages container -->
+    <div id="messages-container" class="flex-grow p-4 overflow-y-auto conversation-container">
+        {% for msg in messages %}
+        <div class="{% if msg.is_from_me %}message-sent{% else %}message-received{% endif %} chat-message">
+            <div>{{ msg.message }}</div>
+            <div class="timestamp">{{ msg.timestamp }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Message input - only show for human conversations -->
+    {% if status == 'human' %}
+    <div class="border-t border-gray-700 p-4">
+        <form hx-post="{{ url_for('send_message') }}"
+              hx-target="#conversation"
+              hx-swap="innerHTML"
+              class="flex flex-col gap-3">
+            <input type="hidden" name="sender_id" value="{{ sender_id }}">
+            
+            <textarea name="message"
+                     class="w-full p-3 bg-secondary border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                     placeholder="Type your message here..."
+                     rows="3"></textarea>
+            
+            <div class="flex space-x-2">
+                <button type="submit"
+                       class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg flex-grow">
+                    Send Message
+                </button>
+                <button type="button"
+                       class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg"
+                       hx-post="{{ url_for('set_assistant_mode') }}"
+                       hx-target="#conversation"
+                       hx-swap="innerHTML"
+                       hx-vals='{"sender_id": "{{ sender_id }}"}'>
+                    Return to Assistant
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Scroll to bottom of messages
+    document.addEventListener('htmx:afterSwap', function(event) {
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    });
+    
+    // Auto-refresh handling - without Jinja2 conditional
+    document.addEventListener('DOMContentLoaded', function() {
+        // Define the sender ID from the hidden input
+        const senderIdInput = document.querySelector('input[name="sender_id"]');
+        if (!senderIdInput) return; // Exit if no sender ID (not in a conversation)
+        
+        const senderId = senderIdInput.value;
+        const toggleId = 'auto-refresh-' + senderId;
+        const toggleElement = document.getElementById(toggleId);
+        
+        if (toggleElement) {
+            // Set up refresh functionality
+            let refreshTimer;
+            
+            function startRefresh() {
+                refreshTimer = setInterval(function() {
+                    if (toggleElement.checked) {
+                        // Use the data attribute to get the URL
+                        const url = '/conversation/' + senderId;
+                        htmx.ajax('GET', url, {
+                            target: '#conversation',
+                            swap: 'innerHTML'
+                        });
+                    }
+                }, 5000); // 5 second refresh
+            }
+            
+            function stopRefresh() {
+                clearInterval(refreshTimer);
+            }
+            
+            // Handle toggle changes
+            toggleElement.addEventListener('change', function() {
+                if (this.checked) {
+                    startRefresh();
+                } else {
+                    stopRefresh();
+                }
+            });
+            
+            // Start refresh on load
+            startRefresh();
+            
+            // Clean up when leaving
+            document.body.addEventListener('htmx:beforeSwap', function(event) {
+                if (event.detail.target.id === 'conversation') {
+                    stopRefresh();
+                }
+            });
+        }
+    });
+</script>

@@ -87,11 +87,14 @@ def save_auth_token(ig_business_id, access_token, token_type='instagram_user', e
             # Clean the business ID to ensure no comments are included
             clean_business_id = str(ig_business_id).strip()
             
-            db.execute('''
+            query = '''
                 INSERT OR REPLACE INTO auth_tokens 
                 (ig_business_id, access_token, token_type, expires_at) 
                 VALUES (?, ?, ?, ?)
-            ''', (clean_business_id, str(access_token), token_type, expires_at))
+            '''
+            params = (clean_business_id, str(access_token), token_type, expires_at)
+            print(f"Executing query: {query} with params: {params}")
+            db.execute(query, params)
             db.commit()
             return True
         except Exception as e:

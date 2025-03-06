@@ -1,0 +1,24 @@
+{% if users %}
+    {% for user in users %}
+    <div class="p-3 mb-2 bg-secondary rounded-lg hover:bg-gray-700 cursor-pointer transition-colors"
+         hx-get="{{ url_for('get_conversation', sender_id=user.sender_id) }}"
+         hx-target="#conversation"
+         hx-swap="innerHTML">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="font-medium">{{ user.username or 'User ' + user.sender_id }}</p>
+                <p class="text-xs text-gray-400">{{ user.last_updated }}</p>
+            </div>
+            {% if status == 'human' %}
+                <span class="bg-red-600 text-white text-xs px-2 py-1 rounded-full">Human</span>
+            {% else %}
+                <span class="bg-green-600 text-white text-xs px-2 py-1 rounded-full">Bot</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="p-4 text-center text-gray-500">
+        No conversations available
+    </div>
+{% endif %}

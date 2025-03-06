@@ -1,42 +1,40 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Instagram Business Login</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f2f5;
-        }
-        .login-container {
-            text-align: center;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .login-button {
-            background-color: #0095f6;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="login-container">
-        <h1>Instagram Business Login</h1>
-        <p>Connect your Instagram Business account to continue</p>
-        <a href="/auth" class="login-button">Login with Instagram</a>
+{% extends "base.html" %}
+
+{% block title %}Login - Instagram Chat Platform{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[80vh]">
+    <div class="bg-secondary p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h1 class="text-2xl font-bold mb-6 text-center">Instagram Chat Platform</h1>
+        
+        <div class="mb-8">
+            <h2 class="text-xl mb-4">Connect with Instagram</h2>
+            <p class="text-gray-400 mb-4">Connect your Instagram Business Account to enable the chat features</p>
+            <a href="{{ url_for('auth') }}" class="block w-full bg-primary hover:bg-blue-700 text-white font-bold py-3 px-4 rounded text-center">
+                Connect with Instagram
+            </a>
+        </div>
+        
+        <div class="border-t border-gray-700 pt-6">
+            <h2 class="text-xl mb-4">Manual Configuration</h2>
+            <p class="text-gray-400 mb-4">Or enter your credentials manually</p>
+            
+            <form action="{{ url_for('dashboard') }}" method="post" class="space-y-4">
+                <div>
+                    <label for="access_token" class="block mb-2 text-sm font-medium">Instagram Page Access Token</label>
+                    <input type="password" id="access_token" name="access_token" class="bg-gray-800 border border-gray-700 text-white rounded-lg block w-full p-2.5">
+                </div>
+                
+                <div>
+                    <label for="business_id" class="block mb-2 text-sm font-medium">Instagram Business ID</label>
+                    <input type="text" id="business_id" name="business_id" class="bg-gray-800 border border-gray-700 text-white rounded-lg block w-full p-2.5">
+                </div>
+                
+                <button type="submit" class="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-2.5 px-4 rounded">
+                    Save Credentials
+                </button>
+            </form>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

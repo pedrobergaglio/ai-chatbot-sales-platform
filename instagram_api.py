@@ -39,13 +39,21 @@ class InstagramAPI:
             return None
 
     def send_message(self, recipient_id, message_text):
-        """Send message using Instagram Graph API"""
+        """Send message using Instagram Graph API with improved error handling"""
         url = f"{self.base_url}/{self.api_version}/{self.ig_user_id}/messages"
+
+        print(f"Access token: {self.access_token[:10]}...")
+        print(f"IG user ID: {self.ig_user_id}")
         
         headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json"
         }
+        
+        """ # Add token to parameters instead of headers (more reliable)
+        params = {
+            "access_token": self.access_token
+        } """
         
         payload = {
             "recipient": {
@@ -59,14 +67,30 @@ class InstagramAPI:
         print(f"Sending message to {recipient_id}: {message_text[:100]}...")
         
         try:
+            # Make the API request
             response = requests.post(url, json=payload, headers=headers)
-            response_data = response.json()
+            #response = requests.post(url, json=payload, params=params, headers=headers)
             
+            # Debug the response
+            print(f"Response status: {response.status_code}")
+            print(f"Response body: {response.text[:200]}...")  # Print first 200 chars
+            
+            # Only try to parse JSON if we have a successful response
             if response.status_code == 200:
-                print(f"Message sent successfully to {recipient_id}")
-                return response_data
+                if response.text.strip():  # Check if response is not empty
+                    try:
+                        response_data = response.json()
+                        print("JSON parse successful")
+                        return response_data
+                    except json.JSONDecodeError as e:
+                        print(f"JSON parse error: {e}")
+                        # Return True anyway if status was success
+                        return True
+                else:
+                    print("Empty but successful response")
+                    return True
             else:
-                print(f"Error sending message: {response_data}")
+                print(f"Error status code: {response.status_code}")
                 return None
                 
         except Exception as e:
