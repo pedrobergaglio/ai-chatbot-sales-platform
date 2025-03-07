@@ -294,6 +294,13 @@ def send_message():
     
     return jsonify({"error": f"Failed to send message via {platform}"}), 500
 
+
+@app.route('/privacy-policy')
+def privacy_policy():
+    """Display the privacy policy page"""
+    now = datetime.now()
+    return render_template('privacy_policy.html', now=now)
+
 @app.route('/set_assistant_mode', methods=['POST'])
 #@login_required
 def set_assistant_mode():
