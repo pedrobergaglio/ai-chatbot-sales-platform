@@ -214,14 +214,14 @@ def index():
     return redirect(url_for('login' if 'access_token' not in session else 'dashboard'))
 
 @app.route('/dashboard')
-@login_required
+#@login_required
 def dashboard():
     return render_template('dashboard.html')
 
 # HTMX partial routes for dynamic updates
 @app.route('/users/<status>')
 @app.route('/users/<status>/<platform>')
-@login_required
+#@login_required
 def get_users(status, platform='all'):
     """Get users filtered by status and optionally by platform"""
     if platform == 'all':
@@ -236,7 +236,7 @@ def get_users(status, platform='all'):
                           status_filter=status.lower())
 
 @app.route('/conversation/<sender_id>')
-@login_required
+#@login_required
 def get_conversation(sender_id):
     """Get conversation with a specific user"""
     user_info = get_user_info(sender_id)
@@ -249,7 +249,7 @@ def get_conversation(sender_id):
                           status=status)
 
 @app.route('/send_message', methods=['POST'])
-@login_required
+#@login_required
 def send_message():
     """Send message to user via appropriate platform"""
     sender_id = request.form.get('sender_id')
@@ -295,7 +295,7 @@ def send_message():
     return jsonify({"error": f"Failed to send message via {platform}"}), 500
 
 @app.route('/set_assistant_mode', methods=['POST'])
-@login_required
+#@login_required
 def set_assistant_mode():
     """Switch conversation back to AI assistant mode"""
     sender_id = request.form.get('sender_id')
@@ -500,7 +500,7 @@ def set_conversation_to_assistant(sender_id):
 
 # Add missing function for token refreshing that exists in main.py
 @app.route('/refresh_token')
-@login_required
+#@login_required
 def refresh_token_route():
     """Refresh the Instagram access token"""
     if 'access_token' not in session:
