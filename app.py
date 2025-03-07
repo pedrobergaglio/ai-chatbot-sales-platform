@@ -44,7 +44,7 @@ REDIRECT_URI = os.getenv('INSTAGRAM_REDIRECT_URI2')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
 
 # Set up logging
-logging.basicConfig(
+""" logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
@@ -52,7 +52,7 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger('facebook_debug')
+logger = logging.getLogger('facebook_debug') """
 
 # Authentication decorator
 def login_required(f):
