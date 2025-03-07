@@ -542,7 +542,7 @@ def deauthorize():
         
         if user_id:
             # Clean up user data from database
-            app.logger.info(f"Deauthorized user: {user_id}")
+            print("LOGGER" +f"Deauthorized user: {user_id}")
             
         return Response('', status=200)
     except Exception as e:
@@ -557,7 +557,7 @@ def delete_data():
         
         if user_id:
             # Implement permanent data deletion for the user
-            app.logger.info(f"Data deletion request for user: {user_id}")
+            print("LOGGER" +f"Data deletion request for user: {user_id}")
             
         return Response('', status=200)
     except Exception as e:
@@ -594,8 +594,8 @@ def whatsapp_signup():
     config_id = os.getenv('WA_CONFIG_ID')
     
     # Log the current URL for debugging
-    app.logger.info(f"Current whatsapp-signup URL: {request.url}")
-    app.logger.info(f"Request root URL: {request.url_root}")
+    print("LOGGER" +f"Current whatsapp-signup URL: {request.url}")
+    print("LOGGER" +f"Request root URL: {request.url_root}")
     
     # No longer use url_for to ensure consistency
     # Create the redirect URLs manually to match the format in fallback_redirect_uri
@@ -612,7 +612,7 @@ def whatsapp_signup():
     if error_url.startswith('http:'):
         error_url = 'https:' + error_url[5:]
     
-    app.logger.info(f"Webhook signup URLs - Success: {success_url}, Error: {error_url}, Callback: {callback_url}")
+    print("LOGGER" +f"Webhook signup URLs - Success: {success_url}, Error: {error_url}, Callback: {callback_url}")
     
     return render_template('whatsapp_signup.html', 
                           app_id=app_id,
@@ -625,7 +625,7 @@ def whatsapp_signup():
 def whatsapp_signup_callback():
     """Handle WhatsApp sign-up callback data with improved URI handling"""
     data = request.json
-    app.logger.info(f"WhatsApp signup callback data: {data}")
+    print("LOGGER" +f"WhatsApp signup callback data: {data}")
     
     try:
         # Extract data from request
@@ -634,7 +634,7 @@ def whatsapp_signup_callback():
         phone_number_id = data.get('phoneNumberId')
         client_redirect_uri = data.get('redirectUri')
         
-        app.logger.info(f"Client reported redirect URI: '{client_redirect_uri}'")
+        print("LOGGER" +f"Client reported redirect URI: '{client_redirect_uri}'")
         
         # Validate inputs
         if not code:
@@ -642,11 +642,11 @@ def whatsapp_signup_callback():
         
         # Try with client-provided redirect URI first if available
         if client_redirect_uri:
-            app.logger.info(f"Trying with client-provided URI first: {client_redirect_uri}")
+            print("LOGGER" +f"Trying with client-provided URI first: {client_redirect_uri}")
             # Rest of the code for token exchange...
         
         # If that doesn't work or no client URI provided, use our calculated one
-        app.logger.info(f"Attempting code exchange")
+        print("LOGGER" +f"Attempting code exchange")
         system_user_id, system_token = exchange_code_for_wa_token(code)
         
         # ...existing code...
@@ -672,10 +672,10 @@ def exchange_code_for_wa_token(code):
         if redirect_uri.startswith('http:'):
             redirect_uri = 'https:' + redirect_uri[5:]
             
-        app.logger.info(f"EXACT Redirect URI being used: '{redirect_uri}'")
+        print("LOGGER" +f"EXACT Redirect URI being used: '{redirect_uri}'")
         
         # Log the fallback URI from the actual Facebook URL for comparison
-        app.logger.info(f"Expected fallback URI: 'https://steady-perch-evidently.ngrok-free.app/whatsapp-signup'")
+        print("LOGGER" +f"Expected fallback URI: 'https://steady-perch-evidently.ngrok-free.app/whatsapp-signup'")
 
         # Exchange code for access token using Meta Graph API
         response = requests.get(
@@ -689,7 +689,7 @@ def exchange_code_for_wa_token(code):
         )
         
         # Log complete request for debugging
-        app.logger.info(f"Token exchange request URL: {response.request.url}")
+        print("LOGGER" +f"Token exchange request URL: {response.request.url}")
         
         if response.status_code != 200:
             print("LOGGER" +f"Error exchanging code: {response.text}")
@@ -804,7 +804,7 @@ def whatsapp_success():
                 return render_template('whatsapp_success.html', phone_number_id=phone_number_id)
             
         except Exception as e:
-            app.logger.warning(f"Could not process code on success page: {e}")
+            print("LOGGER WARNING" +f"Could not process code on success page: {e}")
             # We'll still show the success page even if code processing fails
     
     return render_template('whatsapp_success.html')
@@ -863,22 +863,22 @@ def log_request_info():
     g.request_start_time = time.time()
     
     # Log all request details
-    logger.info(f"Request URL: {request.url}")
-    logger.info(f"Request Method: {request.method}")
-    logger.info(f"Request Headers: {dict(request.headers)}")
-    logger.info(f"Request Args: {dict(request.args)}")
+    print("LOGGER INFO" +f"Request URL: {request.url}")
+    print("LOGGER INFO" +f"Request Method: {request.method}")
+    print("LOGGER INFO" +f"Request Headers: {dict(request.headers)}")
+    print("LOGGER INFO" +f"Request Args: {dict(request.args)}")
     
     if request.url.endswith('whatsapp-success') or 'callback' in request.url:
-        logger.info(f"OAUTH REDIRECT URL DETECTED: {request.url}")
-        logger.info(f"Query Parameters: {dict(request.args)}")
+        print("LOGGER INFO" +f"OAUTH REDIRECT URL DETECTED: {request.url}")
+        print("LOGGER INFO" +f"Query Parameters: {dict(request.args)}")
 
 @app.after_request
 def log_response_info(response):
     """Log response details"""
     if hasattr(g, 'request_start_time'):
         duration = time.time() - g.request_start_time
-        logger.info(f"Request duration: {duration:.2f}s")
-        logger.info(f"Response Status: {response.status_code}")
+        print("LOGGER INFO" +f"Request duration: {duration:.2f}s")
+        print("LOGGER INFO" +f"Response Status: {response.status_code}")
         
     return response
 
@@ -886,13 +886,13 @@ def log_response_info(response):
 @app.route('/<path:path>')
 def catch_all(path):
     """Catch-all route to log Facebook redirects"""
-    logger.warning(f"Unhandled path accessed: /{path}")
-    logger.warning(f"Full URL: {request.url}")
-    logger.warning(f"Query Parameters: {dict(request.args)}")
+    print("LOGGER WARNING" +f"Unhandled path accessed: /{path}")
+    print("LOGGER WARNING" +f"Full URL: {request.url}")
+    print("LOGGER WARNING" +f"Query Parameters: {dict(request.args)}")
     
     # If this seems like an OAuth redirect, log it clearly
     if 'code' in request.args:
-        logger.warning(f"POTENTIAL MISSED OAUTH REDIRECT: {request.url}")
+        print("LOGGER WARNING" +f"POTENTIAL MISSED OAUTH REDIRECT: {request.url}")
     
     # Redirect to whatsapp success page if it seems like an OAuth redirect
     if 'code' in request.args:
