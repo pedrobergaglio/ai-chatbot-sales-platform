@@ -495,7 +495,7 @@ def set_conversation_to_assistant(sender_id):
         # Use the existing function from database module
         return set_conversation_status(sender_id, 'assistant')
     except Exception as e:
-        app.logger.error(f"Error switching conversation status: {e}")
+        print("LOGGER" +f"Error switching conversation status: {e}")
         return False
 
 # Add missing function for token refreshing that exists in main.py
@@ -530,7 +530,7 @@ def refresh_token_route():
         
         return jsonify({"error": f"Failed to refresh token: {response.text}"}), 400
     except Exception as e:
-        app.logger.error(f"Error refreshing token: {e}")
+        print("LOGGER" +f"Error refreshing token: {e}")
         return jsonify({"error": str(e)}), 500
 
 # Add the deauthorize and delete-data routes from main.py
@@ -546,7 +546,7 @@ def deauthorize():
             
         return Response('', status=200)
     except Exception as e:
-        app.logger.error(f"Deauthorization error: {e}")
+        print("LOGGER" +f"Deauthorization error: {e}")
         return Response('Bad Request', status=400)
 
 @app.route('/delete-data', methods=['POST'])
@@ -561,7 +561,7 @@ def delete_data():
             
         return Response('', status=200)
     except Exception as e:
-        app.logger.error(f"Data deletion error: {e}")
+        print("LOGGER" +f"Data deletion error: {e}")
         return Response('Bad Request', status=400)
 
 # Update manual token endpoint
@@ -653,7 +653,7 @@ def whatsapp_signup_callback():
 
         return jsonify({'success': True})
     except Exception as e:
-        app.logger.error(f"Error processing WhatsApp sign-up: {str(e)}")
+        print("LOGGER" +f"Error processing WhatsApp sign-up: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def exchange_code_for_wa_token(code):
@@ -692,14 +692,14 @@ def exchange_code_for_wa_token(code):
         app.logger.info(f"Token exchange request URL: {response.request.url}")
         
         if response.status_code != 200:
-            app.logger.error(f"Error exchanging code: {response.text}")
+            print("LOGGER" +f"Error exchanging code: {response.text}")
             return None, None
             
         token_data = response.json()
         access_token = token_data.get('access_token')
         
         if not access_token:
-            app.logger.error("No access token in response")
+            print("LOGGER" +"No access token in response")
             return None, None
         
         # Get system user ID from the token
@@ -712,20 +712,20 @@ def exchange_code_for_wa_token(code):
         )
         
         if user_response.status_code != 200:
-            app.logger.error(f"Error getting user info: {user_response.text}")
+            print("LOGGER" +f"Error getting user info: {user_response.text}")
             return None, None
             
         user_data = user_response.json()
         system_user_id = user_data.get('id')
         
         if not system_user_id:
-            app.logger.error("No system user ID in response")
+            print("LOGGER" +"No system user ID in response")
             return None, None
             
         return system_user_id, access_token
         
     except Exception as e:
-        app.logger.error(f"Exception in exchange_code_for_wa_token: {str(e)}")
+        print("LOGGER" +f"Exception in exchange_code_for_wa_token: {str(e)}")
         return None, None
 
 def get_whatsapp_business_info(system_user_id, access_token):
@@ -740,7 +740,7 @@ def get_whatsapp_business_info(system_user_id, access_token):
         )
         
         if response.status_code != 200:
-            app.logger.error(f"Error getting accounts: {response.text}")
+            print("LOGGER" +f"Error getting accounts: {response.text}")
             return None
             
         accounts_data = response.json()
@@ -770,7 +770,7 @@ def get_whatsapp_business_info(system_user_id, access_token):
         return None
         
     except Exception as e:
-        app.logger.error(f"Exception in get_whatsapp_business_info: {str(e)}")
+        print("LOGGER" +f"Exception in get_whatsapp_business_info: {str(e)}")
         return None
 
 @app.route('/whatsapp-success')
@@ -832,11 +832,11 @@ def get_whatsapp_system_user_token(system_user_id):
             data = response.json()
             return data.get('access_token')
         
-        app.logger.error(f"Error getting system user token: {response.text}")
+        print("LOGGER" +f"Error getting system user token: {response.text}")
         return None
         
     except Exception as e:
-        app.logger.error(f"Exception getting system user token: {e}")
+        print("LOGGER" +f"Exception getting system user token: {e}")
         return None
 
 def save_whatsapp_business(waba_id, phone_number_id, system_user_id, access_token):
@@ -854,7 +854,7 @@ def save_whatsapp_business(waba_id, phone_number_id, system_user_id, access_toke
         
         return True
     except Exception as e:
-        app.logger.error(f"Error saving WhatsApp business: {e}")
+        print("LOGGER" +f"Error saving WhatsApp business: {e}")
         return False
 
 @app.before_request
