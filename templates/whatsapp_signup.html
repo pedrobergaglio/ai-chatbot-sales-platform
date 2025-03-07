@@ -65,12 +65,31 @@
 
 <script>
     // Debug logging function
-    function logDebug(message) {
-        console.log("WhatsApp Debug:", message);
+    function logDebug(message, obj = null) {
+        const timestamp = new Date().toLocaleTimeString();
+        
+        if (obj) {
+            console.log(`[${timestamp}] ${message}`, obj);
+        } else {
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
         const debugLog = document.getElementById('debug-log');
         if (debugLog) {
-            const time = new Date().toLocaleTimeString();
-            debugLog.innerHTML += `<div>[${time}] ${message}</div>`;
+            const logEntry = document.createElement('div');
+            logEntry.classList.add('text-xs', 'mb-1');
+            
+            if (obj) {
+                try {
+                    logEntry.innerText = `[${timestamp}] ${message} ${JSON.stringify(obj)}`;
+                } catch (e) {
+                    logEntry.innerText = `[${timestamp}] ${message} [Object]`;
+                }
+            } else {
+                logEntry.innerText = `[${timestamp}] ${message}`;
+            }
+            
+            debugLog.appendChild(logEntry);
         }
         
         const status = document.getElementById('loading-status');
@@ -79,24 +98,33 @@
         }
     }
     
-    // Initialize Facebook SDK (as per documentation)
+    // Store data from message events
+    let signupData = {};
+    
+    // Initialize Facebook SDK
     window.fbAsyncInit = function() {
         logDebug("SDK loaded, initializing...");
         
         try {
-            // Initialize the SDK
+            // Initialize the SDK with exact supported features
             FB.init({
                 appId: '{{ app_id }}',
                 autoLogAppEvents: true,
                 xfbml: true,
-                version: 'v17.0' // Graph API version
+                version: 'v22.0',
+                cookie: true,  // Enable cookies to allow the server to access the session
+                status: true   // Check login status
             });
             
             logDebug("FB SDK initialized successfully");
             
+            // Handle any redirect that might have happened
+            FB.getLoginStatus(function(response) {
+                logDebug("Login status checked", response);
+            });
+            
             // Enable the button after SDK is loaded
             document.getElementById('wa-signup-button').addEventListener('click', launchWhatsAppSignup);
-            document.getElementById('wa-signup-button').disabled = false;
         } catch (error) {
             logDebug("Error initializing FB SDK: " + error.message);
         }
@@ -108,70 +136,121 @@
         
         try {
             const data = JSON.parse(event.data);
+            logDebug("Received message event:", data);
+            
             if (data.type === 'WA_EMBEDDED_SIGNUP') {
-                logDebug('WhatsApp signup message event: ' + JSON.stringify(data));
-                
-                // Handle different states if needed
-                if (data.event === 'COMPLETED') {
-                    logDebug('Signup completed!');
+                // Store data based on event type
+                if (data.event === 'FINISH') {
+                    // Successful completion - capture WABA ID and phone number ID
+                    signupData = {
+                        wabaId: data.data.waba_id,
+                        phoneNumberId: data.data.phone_number_id,
+                        event: "FINISH"
+                    };
+                    
+                    logDebug('WhatsApp signup completed successfully!', signupData);
+                } else if (data.event === 'CANCEL') {
+                    // Abandonment or error
+                    signupData = {
+                        event: "CANCEL",
+                        step: data.data.current_step || null,
+                        errorMessage: data.data.error_message || null,
+                        errorId: data.data.error_id || null
+                    };
+                    
+                    logDebug('WhatsApp signup was abandoned or encountered an error', signupData);
                 }
             }
         } catch (e) {
-            logDebug('Received message event: ' + event.data);
+            logDebug('Error parsing message event: ' + e.message);
+            logDebug('Raw message data: ' + event.data);
         }
     });
     
-    // Response callback for FB.login (as per documentation)
+    // Response callback for FB.login
     const fbLoginCallback = (response) => {
-        logDebug('Login callback received');
+        logDebug('Login callback received', response);
         
         if (response.authResponse) {
             const code = response.authResponse.code;
             logDebug('Received authorization code: ' + code);
             
-            // Send the code to server for processing
-            fetch('{{ url_for("whatsapp_signup_callback") }}', {
+            // Prepare data to send to server
+            const dataToSend = {
+                code: code,
+                // Important: Send the EXACT redirect URI without trailing slash
+                redirectUri: window.location.origin + '/whatsapp-signup',  // Fixed format
+                callbackUrl: window.location.href  // Send the current URL too
+            };
+            
+            // If we have WABA ID and phone number ID from message event, include those
+            if (signupData.wabaId && signupData.phoneNumberId) {
+                dataToSend.wabaId = signupData.wabaId;
+                dataToSend.phoneNumberId = signupData.phoneNumberId;
+            }
+            
+            logDebug('Sending data to server', dataToSend);
+            
+            // Send the data to server for processing
+            fetch('{{ callback_url }}', {  // Use the callback URL from server
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    code: code
-                })
+                body: JSON.stringify(dataToSend)
             })
             .then(response => response.json())
             .then(data => {
-                logDebug('Server response: ' + JSON.stringify(data));
+                logDebug('Server response:', data);
                 
                 if (data.success) {
-                    // Redirect to success page
-                    window.location.href = '{{ success_url }}';
+                    // Get current URL and force HTTPS if needed
+                    let successUrl = '{{ success_url }}';
+                    if (successUrl.startsWith('http:')) {
+                        successUrl = 'https:' + successUrl.substring(5);
+                    }
+                    window.location.href = successUrl;
                 } else {
                     logDebug('Error from server: ' + data.error);
+                    
+                    // Show error message
+                    document.getElementById('loading-status').innerText = 'Error: ' + data.error;
+                    document.getElementById('loading-status').classList.add('text-red-500');
                 }
             })
             .catch(error => {
                 logDebug('Error processing response: ' + error);
+                
+                // Show error message
+                document.getElementById('loading-status').innerText = 'Error: Failed to process signup';
+                document.getElementById('loading-status').classList.add('text-red-500');
             });
         } else {
-            logDebug('Login failed or was cancelled: ' + JSON.stringify(response));
+            logDebug('Login failed or was cancelled', response);
+            document.getElementById('loading-status').innerText = 'Login failed or was cancelled';
         }
     };
     
-    // Launch method for WhatsApp signup (as per documentation)
+    // Launch method for WhatsApp signup
     const launchWhatsAppSignup = () => {
         logDebug('Launching WhatsApp signup...');
+        
+        // Update UI to indicate loading
+        document.getElementById('loading-status').innerText = 'Launching WhatsApp signup...';
+        document.getElementById('wa-signup-button').disabled = true;
         
         // Check if FB is available
         if (typeof FB === 'undefined') {
             logDebug('Facebook SDK not loaded yet');
+            document.getElementById('loading-status').innerText = 'Facebook SDK not loaded yet. Please try again.';
+            document.getElementById('wa-signup-button').disabled = false;
             return;
         }
         
         try {
             // Call FB.login with WhatsApp configuration
             FB.login(fbLoginCallback, {
-                config_id: '{{ config_id }}',  // Configuration ID from Meta Business Manager
+                config_id: '{{ config_id }}',
                 response_type: 'code',
                 override_default_response_type: true,
                 extras: {
@@ -182,6 +261,8 @@
             });
         } catch (error) {
             logDebug('Error launching WhatsApp signup: ' + error.message);
+            document.getElementById('loading-status').innerText = 'Error: ' + error.message;
+            document.getElementById('wa-signup-button').disabled = false;
         }
     };
 </script>

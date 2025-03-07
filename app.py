@@ -6,6 +6,9 @@ import secrets
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from functools import wraps
+import logging
+from flask import request, g
+import time
 
 # Import utility modules
 from database import (
@@ -22,6 +25,15 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(16))
 
+# Add these lines at the top of your app.py after creating the Flask app
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+# Make Flask work behind proxy (like ngrok) correctly
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Add this configuration to your app
+app.config['PREFERRED_URL_SCHEME'] = 'https'
+
 # Initialize database
 init_db()
 
@@ -30,6 +42,17 @@ INSTAGRAM_CLIENT_ID = os.getenv('INSTAGRAM_CLIENT_ID')
 INSTAGRAM_CLIENT_SECRET = os.getenv('INSTAGRAM_CLIENT_SECRET')
 REDIRECT_URI = os.getenv('INSTAGRAM_REDIRECT_URI2')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
+
+# Set up logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("facebook_urls.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('facebook_debug')
 
 # Authentication decorator
 def login_required(f):
@@ -568,52 +591,222 @@ def whatsapp_signup():
     """WhatsApp embedded sign-up page"""
     # Configuration for WhatsApp sign-up
     app_id = os.getenv('WA_META_APP_ID')
-    config_id = os.getenv('WA_CONFIG_ID')  # Add this to your .env file
-    success_url = url_for('whatsapp_success', _external=True)
-    error_url = url_for('whatsapp_error', _external=True)
+    config_id = os.getenv('WA_CONFIG_ID')
+    
+    # Log the current URL for debugging
+    app.logger.info(f"Current whatsapp-signup URL: {request.url}")
+    app.logger.info(f"Request root URL: {request.url_root}")
+    
+    # No longer use url_for to ensure consistency
+    # Create the redirect URLs manually to match the format in fallback_redirect_uri
+    base_url = request.url_root.rstrip('/')
+    callback_url = f"{base_url}/whatsapp-signup/callback"
+    success_url = f"{base_url}/whatsapp-success"
+    error_url = f"{base_url}/whatsapp-error"
+    
+    # Ensure HTTPS
+    if callback_url.startswith('http:'):
+        callback_url = 'https:' + callback_url[5:]
+    if success_url.startswith('http:'):
+        success_url = 'https:' + success_url[5:]
+    if error_url.startswith('http:'):
+        error_url = 'https:' + error_url[5:]
+    
+    app.logger.info(f"Webhook signup URLs - Success: {success_url}, Error: {error_url}, Callback: {callback_url}")
     
     return render_template('whatsapp_signup.html', 
                           app_id=app_id,
                           config_id=config_id,
                           success_url=success_url,
-                          error_url=error_url)
+                          error_url=error_url,
+                          callback_url=callback_url)
 
 @app.route('/whatsapp-signup/callback', methods=['POST'])
 def whatsapp_signup_callback():
-    """Handle WhatsApp sign-up callback data"""
+    """Handle WhatsApp sign-up callback data with improved URI handling"""
     data = request.json
+    app.logger.info(f"WhatsApp signup callback data: {data}")
     
     try:
+        # Extract data from request
+        code = data.get('code')
         waba_id = data.get('wabaId')
         phone_number_id = data.get('phoneNumberId')
-        system_user_id = data.get('systemUserId')
+        client_redirect_uri = data.get('redirectUri')
         
-        if not waba_id or not phone_number_id or not system_user_id:
-            return jsonify({'success': False, 'error': 'Missing required WhatsApp account data'}), 400
-            
-        # Get system user access token
-        system_token = get_whatsapp_system_user_token(system_user_id)
+        app.logger.info(f"Client reported redirect URI: '{client_redirect_uri}'")
         
-        if not system_token:
-            return jsonify({'success': False, 'error': 'Failed to get system user token'}), 400
+        # Validate inputs
+        if not code:
+            return jsonify({'success': False, 'error': 'Missing authorization code'}), 400
         
-        # Save WhatsApp business information
-        save_whatsapp_business(
-            waba_id=waba_id,
-            phone_number_id=phone_number_id,
-            system_user_id=system_user_id,
-            access_token=system_token
-        )
+        # Try with client-provided redirect URI first if available
+        if client_redirect_uri:
+            app.logger.info(f"Trying with client-provided URI first: {client_redirect_uri}")
+            # Rest of the code for token exchange...
         
+        # If that doesn't work or no client URI provided, use our calculated one
+        app.logger.info(f"Attempting code exchange")
+        system_user_id, system_token = exchange_code_for_wa_token(code)
+        
+        # ...existing code...
+
         return jsonify({'success': True})
-        
     except Exception as e:
         app.logger.error(f"Error processing WhatsApp sign-up: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+def exchange_code_for_wa_token(code):
+    """Exchange code for WhatsApp system user token"""
+    try:
+        # Get Meta app access token from environment
+        app_id = os.getenv('WA_META_APP_ID')
+        app_secret = os.getenv('WA_APP_CLIENT_SECRET', '')
+        
+        # IMPORTANT FIX: Manually create the exact same redirect URI with consistent trailing slash handling
+        # Facebook uses /whatsapp-signup WITHOUT trailing slash
+        base_url = request.url_root.rstrip('/')  # Remove any trailing slash
+        redirect_uri = f"{base_url}/whatsapp-signup"  # Add path without trailing slash
+        
+        # Make sure we're using HTTPS
+        if redirect_uri.startswith('http:'):
+            redirect_uri = 'https:' + redirect_uri[5:]
+            
+        app.logger.info(f"EXACT Redirect URI being used: '{redirect_uri}'")
+        
+        # Log the fallback URI from the actual Facebook URL for comparison
+        app.logger.info(f"Expected fallback URI: 'https://steady-perch-evidently.ngrok-free.app/whatsapp-signup'")
+
+        # Exchange code for access token using Meta Graph API
+        response = requests.get(
+            'https://graph.facebook.com/v22.0/oauth/access_token',
+            params={
+                'client_id': app_id,
+                'client_secret': app_secret,
+                'redirect_uri': redirect_uri,
+                'code': code
+            }
+        )
+        
+        # Log complete request for debugging
+        app.logger.info(f"Token exchange request URL: {response.request.url}")
+        
+        if response.status_code != 200:
+            app.logger.error(f"Error exchanging code: {response.text}")
+            return None, None
+            
+        token_data = response.json()
+        access_token = token_data.get('access_token')
+        
+        if not access_token:
+            app.logger.error("No access token in response")
+            return None, None
+        
+        # Get system user ID from the token
+        user_response = requests.get(
+            'https://graph.facebook.com/v22.0/me',
+            params={
+                'access_token': access_token,
+                'fields': 'id,name'
+            }
+        )
+        
+        if user_response.status_code != 200:
+            app.logger.error(f"Error getting user info: {user_response.text}")
+            return None, None
+            
+        user_data = user_response.json()
+        system_user_id = user_data.get('id')
+        
+        if not system_user_id:
+            app.logger.error("No system user ID in response")
+            return None, None
+            
+        return system_user_id, access_token
+        
+    except Exception as e:
+        app.logger.error(f"Exception in exchange_code_for_wa_token: {str(e)}")
+        return None, None
+
+def get_whatsapp_business_info(system_user_id, access_token):
+    """Get WhatsApp Business Account info using system user token"""
+    try:
+        # Query system user accounts to get WABA info
+        response = requests.get(
+            f"https://graph.facebook.com/v22.0/{system_user_id}/accounts",
+            params={
+                'access_token': access_token
+            }
+        )
+        
+        if response.status_code != 200:
+            app.logger.error(f"Error getting accounts: {response.text}")
+            return None
+            
+        accounts_data = response.json()
+        
+        # Find WhatsApp Business Account
+        for account in accounts_data.get('data', []):
+            if account.get('category') == 'WhatsApp Business Account':
+                waba_id = account.get('id')
+                
+                # Get phone number ID
+                phone_response = requests.get(
+                    f"https://graph.facebook.com/v22.0/{waba_id}/phone_numbers",
+                    params={
+                        'access_token': access_token
+                    }
+                )
+                
+                if phone_response.status_code == 200:
+                    phone_data = phone_response.json()
+                    if phone_data.get('data') and len(phone_data['data']) > 0:
+                        phone_number_id = phone_data['data'][0].get('id')
+                        return {
+                            'wabaId': waba_id,
+                            'phoneNumberId': phone_number_id
+                        }
+        
+        return None
+        
+    except Exception as e:
+        app.logger.error(f"Exception in get_whatsapp_business_info: {str(e)}")
+        return None
+
 @app.route('/whatsapp-success')
 def whatsapp_success():
     """Success page after WhatsApp sign-up"""
+    # Check for any code parameter that might be passed
+    code = request.args.get('code')
+    
+    # If there's a code and we don't have WABA info yet, we can try to use it
+    if code and not session.get('whatsapp_connected'):
+        try:
+            # Try to exchange the code for a token
+            system_user_id, access_token = exchange_code_for_wa_token(code)
+            phone_number_id = waba_info.get('phoneNumberId')
+            
+            if system_user_id and access_token:
+                # Try to get WhatsApp Business info
+                waba_info = get_whatsapp_business_info(system_user_id, access_token)
+                
+                if waba_info:
+                    # Save the WhatsApp business info
+                    save_whatsapp_business(
+                        waba_id=waba_info.get('wabaId'),
+                        phone_number_id=phone_number_id,
+                        system_user_id=system_user_id,
+                        access_token=access_token
+                    )
+                    # Mark as connected in session
+                    session['whatsapp_connected'] = True
+                
+                return render_template('whatsapp_success.html', phone_number_id=phone_number_id)
+            
+        except Exception as e:
+            app.logger.warning(f"Could not process code on success page: {e}")
+            # We'll still show the success page even if code processing fails
+    
     return render_template('whatsapp_success.html')
 
 @app.route('/whatsapp-error')
@@ -663,6 +856,49 @@ def save_whatsapp_business(waba_id, phone_number_id, system_user_id, access_toke
     except Exception as e:
         app.logger.error(f"Error saving WhatsApp business: {e}")
         return False
+
+@app.before_request
+def log_request_info():
+    """Log all request details to help debug Facebook redirects"""
+    g.request_start_time = time.time()
+    
+    # Log all request details
+    logger.info(f"Request URL: {request.url}")
+    logger.info(f"Request Method: {request.method}")
+    logger.info(f"Request Headers: {dict(request.headers)}")
+    logger.info(f"Request Args: {dict(request.args)}")
+    
+    if request.url.endswith('whatsapp-success') or 'callback' in request.url:
+        logger.info(f"OAUTH REDIRECT URL DETECTED: {request.url}")
+        logger.info(f"Query Parameters: {dict(request.args)}")
+
+@app.after_request
+def log_response_info(response):
+    """Log response details"""
+    if hasattr(g, 'request_start_time'):
+        duration = time.time() - g.request_start_time
+        logger.info(f"Request duration: {duration:.2f}s")
+        logger.info(f"Response Status: {response.status_code}")
+        
+    return response
+
+# Add a wildcard route to catch any Facebook redirects
+@app.route('/<path:path>')
+def catch_all(path):
+    """Catch-all route to log Facebook redirects"""
+    logger.warning(f"Unhandled path accessed: /{path}")
+    logger.warning(f"Full URL: {request.url}")
+    logger.warning(f"Query Parameters: {dict(request.args)}")
+    
+    # If this seems like an OAuth redirect, log it clearly
+    if 'code' in request.args:
+        logger.warning(f"POTENTIAL MISSED OAUTH REDIRECT: {request.url}")
+    
+    # Redirect to whatsapp success page if it seems like an OAuth redirect
+    if 'code' in request.args:
+        return redirect(url_for('whatsapp_success', code=request.args.get('code')))
+    
+    return "Page not found", 404
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 7777))

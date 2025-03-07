@@ -33,6 +33,8 @@ class ThreadManager:
         8. For technical specifications or precise quotes, offer to arrange a meeting with our solutions architects
         9. When the conversation requires human expertise or if the user specifically requests human assistance, 
            respond with 'HUMAN HELP' in your message
+        10. Use less than 400 chars in each message to ensure clear and concise communication and avoid truncation
+        11. Dont use * or _ for formatting, as it may not render correctly in all messaging platforms
         
         Keep responses concise, friendly, and focused on how we can help businesses modernize their operations through technology."""
         self._init_db()
@@ -99,7 +101,7 @@ class ThreadManager:
             
             # Get completion
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",  # or gpt-3.5-turbo for faster/cheaper responses
+                model="gpt-4o-mini", 
                 messages=messages,
                 temperature=0,
                 max_tokens=100  # Keep responses concise
