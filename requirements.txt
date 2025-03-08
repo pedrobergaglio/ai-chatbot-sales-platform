@@ -1,9 +1,9 @@
 # Flask and related packages
-Flask
-Werkzeug
+Flask==2.3.3
+Werkzeug==2.3.7
 
 # OpenAI API
-openai
+openai==1.6.1
 
 # Streamlit for dashboard
 streamlit
@@ -12,10 +12,10 @@ streamlit
 SQLAlchemy
 
 # HTTP requests
-requests
+requests==2.31.0
 
 # Environment variables
-python-dotenv
+python-dotenv==1.0.0
 
 # Date handling
 pytz
@@ -29,7 +29,7 @@ black
 flake8
 
 # Production server
-gunicorn
+gunicorn==21.2.0
 
 # Instagram API requirements
 instagram-basic-display

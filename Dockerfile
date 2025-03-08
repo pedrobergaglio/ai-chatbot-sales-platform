@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.9-slim
 
 WORKDIR /app
 
@@ -6,11 +6,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
+# Copy application code
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 7777
+# Create necessary directories
+RUN mkdir -p /app/static /app/data /app/logs && \
+    chmod 777 /app/data /app/logs
 
-# Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:7777", "app:app"]
+# Expose port
+EXPOSE 7777

@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "7777:7777"
+    volumes:
+      - ./data:/app/data
+      - ./static:/app/static
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    command: gunicorn --bind 0.0.0.0:7777 app:app --workers 3 --access-logfile - --error-logfile -
