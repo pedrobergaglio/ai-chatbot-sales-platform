@@ -19,6 +19,9 @@ from instagram_api import InstagramAPI
 from whatsapp_api import WhatsAppAPI
 from message_handler import InstagramMessageHandler, WhatsAppMessageHandler
 
+# Add this near the imports
+from werkzeug.security import check_password_hash, generate_password_hash
+
 # Load environment variables
 load_dotenv()
 
@@ -58,15 +61,48 @@ logger = logging.getLogger('facebook_debug') """
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'access_token' not in session:
+        if not session.get('logged_in'):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
 # Routes for authentication
-@app.route('/login')
+@app.route('/instagram-login')
+@login_required
+def instagram_login():
+    return render_template('instagram-login.html')
+
+# Add the login route (modified to support our basic auth)
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template('login.html')
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Very simple hardcoded credentials for demo purposes
+        if username == 'test' and password == 'test1234!':
+            session['logged_in'] = True
+            session['username'] = username
+            return redirect(url_for('dashboard'))
+        else:
+            error = 'Invalid credentials. Please try again.'
+            
+    return render_template('login.html', error=error)
+
+# Add the logout route
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    session.pop('username', None)
+    return render_template('logout.html')
+
+# Replace the existing index route
+@app.route('/')
+def index():
+    if session.get('logged_in'):
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
 
 @app.route('/auth')
 def auth():
@@ -209,19 +245,16 @@ def get_account_info(access_token):
         return None
 
 # Dashboard routes
-@app.route('/')
-def index():
-    return redirect(url_for('login' if 'access_token' not in session else 'dashboard'))
 
 @app.route('/dashboard')
-#@login_required
+@login_required
 def dashboard():
     return render_template('dashboard.html')
 
 # HTMX partial routes for dynamic updates
 @app.route('/users/<status>')
 @app.route('/users/<status>/<platform>')
-#@login_required
+@login_required
 def get_users(status, platform='all'):
     """Get users filtered by status and optionally by platform"""
     if platform == 'all':
@@ -236,7 +269,7 @@ def get_users(status, platform='all'):
                           status_filter=status.lower())
 
 @app.route('/conversation/<sender_id>')
-#@login_required
+@login_required
 def get_conversation(sender_id):
     """Get conversation with a specific user"""
     user_info = get_user_info(sender_id)
@@ -249,7 +282,7 @@ def get_conversation(sender_id):
                           status=status)
 
 @app.route('/send_message', methods=['POST'])
-#@login_required
+@login_required
 def send_message():
     """Send message to user via appropriate platform"""
     sender_id = request.form.get('sender_id')
@@ -302,7 +335,7 @@ def privacy_policy():
     return render_template('privacy_policy.html', now=now)
 
 @app.route('/set_assistant_mode', methods=['POST'])
-#@login_required
+@login_required
 def set_assistant_mode():
     """Switch conversation back to AI assistant mode"""
     sender_id = request.form.get('sender_id')
@@ -507,7 +540,7 @@ def set_conversation_to_assistant(sender_id):
 
 # Add missing function for token refreshing that exists in main.py
 @app.route('/refresh_token')
-#@login_required
+@login_required
 def refresh_token_route():
     """Refresh the Instagram access token"""
     if 'access_token' not in session:
@@ -594,6 +627,7 @@ def save_manual_token():
 
 # WhatsApp routes
 @app.route('/whatsapp-signup')
+@login_required
 def whatsapp_signup():
     """WhatsApp embedded sign-up page"""
     # Configuration for WhatsApp sign-up

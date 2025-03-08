@@ -30,6 +30,22 @@
     {% block head %}{% endblock %}
 </head>
 <body class="bg-dark text-white min-h-screen">
+    <!-- Navigation header, only shown when logged in -->
+    {% if session.logged_in %}
+    <header class="bg-secondary py-2 px-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="{{ url_for('dashboard') }}" class="text-xl font-bold"></a>
+            <!-- <a href="{{ url_for('dashboard') }}" class="text-xl font-bold">AI Chatbot Platform</a> -->
+            <div>
+                <span class="mr-4 text-gray-400">Signed in as @{{ session.username }}</span>
+                <a href="{{ url_for('logout') }}" class="text-red-400 hover:text-red-300">
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </header>
+    {% endif %}
+
     <div class="container mx-auto p-4">
         {% block content %}{% endblock %}
     </div>
