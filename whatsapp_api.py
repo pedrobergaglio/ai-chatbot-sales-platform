@@ -21,6 +21,8 @@ class WhatsAppAPI:
             # Eliminar el '9' del número de teléfono
             recipient_id = recipient_id[:2] + recipient_id[3:]
 
+        print(f"Token: {self.access_token}")
+
         url = f"{self.base_url}/{self.api_version}/{self.phone_number_id}/messages"
         
         headers = {

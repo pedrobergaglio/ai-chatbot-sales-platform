@@ -37,7 +37,15 @@
             <a href="{{ url_for('dashboard') }}" class="text-xl font-bold"></a>
             <!-- <a href="{{ url_for('dashboard') }}" class="text-xl font-bold">AI Chatbot Platform</a> -->
             <div>
-                <span class="mr-4 text-gray-400">Signed in as @{{ session.username }}</span>
+                <span class="mr-4 text-gray-200">
+                    Signed in as @{{ session.username }}
+                    {% if instagram_username %}
+                    | Instagram Account: <span class="text-blue-400">{{ instagram_username }}</span>
+                    {% endif %}
+                    {% if whatsapp_connected %}
+                    | <span class="text-green-500">WhatsApp Connected</span>
+                    {% endif %}
+                </span>
                 <a href="{{ url_for('logout') }}" class="text-red-400 hover:text-red-300">
                     <span>Logout</span>
                 </a>
