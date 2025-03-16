@@ -55,7 +55,7 @@ VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger('facebook_debug') """
+LOGGER  = logging.getLOGGER ('facebook_debug') """
 
 # Authentication decorator
 def login_required(f):
@@ -535,7 +535,7 @@ def set_conversation_to_assistant(sender_id):
         # Use the existing function from database module
         return set_conversation_status(sender_id, 'assistant')
     except Exception as e:
-        print("LOGGER" +f"Error switching conversation status: {e}")
+        print("LOGGER " +f"Error switching conversation status: {e}")
         return False
 
 # Add missing function for token refreshing that exists in main.py
@@ -570,7 +570,7 @@ def refresh_token_route():
         
         return jsonify({"error": f"Failed to refresh token: {response.text}"}), 400
     except Exception as e:
-        print("LOGGER" +f"Error refreshing token: {e}")
+        print("LOGGER " +f"Error refreshing token: {e}")
         return jsonify({"error": str(e)}), 500
 
 # Add the deauthorize and delete-data routes from main.py
@@ -582,11 +582,11 @@ def deauthorize():
         
         if user_id:
             # Clean up user data from database
-            print("LOGGER" +f"Deauthorized user: {user_id}")
+            print("LOGGER " +f"Deauthorized user: {user_id}")
             
         return Response('', status=200)
     except Exception as e:
-        print("LOGGER" +f"Deauthorization error: {e}")
+        print("LOGGER " +f"Deauthorization error: {e}")
         return Response('Bad Request', status=400)
 
 @app.route('/delete-data', methods=['POST'])
@@ -597,11 +597,11 @@ def delete_data():
         
         if user_id:
             # Implement permanent data deletion for the user
-            print("LOGGER" +f"Data deletion request for user: {user_id}")
+            print("LOGGER " +f"Data deletion request for user: {user_id}")
             
         return Response('', status=200)
     except Exception as e:
-        print("LOGGER" +f"Data deletion error: {e}")
+        print("LOGGER " +f"Data deletion error: {e}")
         return Response('Bad Request', status=400)
 
 # Update manual token endpoint
@@ -634,30 +634,32 @@ def whatsapp_signup():
     app_id = os.getenv('WA_META_APP_ID')
     config_id = os.getenv('WA_CONFIG_ID')
     
-    # Log the current URL for debugging
-    print("LOGGER" +f"Current whatsapp-signup URL: {request.url}")
-    print("LOGGER" +f"Request root URL: {request.url_root}")
+    # CRITICAL: Use EXACT URI from environment without ANY manipulation
+    redirect_uri = os.getenv('WA_REDIRECT_URI')
+    if not redirect_uri:
+        print("ERROR: WA_REDIRECT_URI not set in .env file.")
+        return render_template('error.html', message="WhatsApp redirect URI not configured. Contact administrator.")
     
-    # No longer use url_for to ensure consistency
-    # Create the redirect URLs manually to match the format in fallback_redirect_uri
-    base_url = request.url_root.rstrip('/')
-    callback_url = f"{base_url}/whatsapp-signup/callback"
-    success_url = f"{base_url}/whatsapp-success"
-    error_url = f"{base_url}/whatsapp-error"
+    # Use separate environment variables for each URL instead of constructing them
+    callback_url = os.getenv('WA_CALLBACK_URL', 
+                            f"{redirect_uri.rsplit('/whatsapp-signup', 1)[0]}/whatsapp-signup/callback")
+    success_url = os.getenv('WA_SUCCESS_URL', 
+                           f"{redirect_uri.rsplit('/whatsapp-signup', 1)[0]}/whatsapp-success")
+    error_url = os.getenv('WA_ERROR_URL', 
+                         f"{redirect_uri.rsplit('/whatsapp-signup', 1)[0]}/whatsapp-error")
     
-    # Ensure HTTPS
-    if callback_url.startswith('http:'):
-        callback_url = 'https:' + callback_url[5:]
-    if success_url.startswith('http:'):
-        success_url = 'https:' + success_url[5:]
-    if error_url.startswith('http:'):
-        error_url = 'https:' + error_url[5:]
+    # IMPROVED LOGGING: Log OAuth dialog request URI (initial URI)
+    print("===== OAUTH URI COMPARISON =====")
+    print(f"[1] OAuth dialog request URI: '{redirect_uri}'")
     
-    print("LOGGER" +f"Webhook signup URLs - Success: {success_url}, Error: {error_url}, Callback: {callback_url}")
+    # Debugging
+    print("LOGGER " +f"Current whatsapp-signup URL: {request.url}")
+    print("LOGGER " +f"Request root URL: {request.url_root}")
     
     return render_template('whatsapp_signup.html', 
                           app_id=app_id,
                           config_id=config_id,
+                          redirect_uri=redirect_uri,  # IMPORTANT: Pass this to the template
                           success_url=success_url,
                           error_url=error_url,
                           callback_url=callback_url)
@@ -666,7 +668,7 @@ def whatsapp_signup():
 def whatsapp_signup_callback():
     """Handle WhatsApp sign-up callback data with improved URI handling"""
     data = request.json
-    print("LOGGER" +f"WhatsApp signup callback data: {data}")
+    print("LOGGER " +f"WhatsApp signup callback data: {data}")
     
     try:
         # Extract data from request
@@ -675,7 +677,7 @@ def whatsapp_signup_callback():
         phone_number_id = data.get('phoneNumberId')
         client_redirect_uri = data.get('redirectUri')
         
-        print("LOGGER" +f"Client reported redirect URI: '{client_redirect_uri}'")
+        print("LOGGER " +f"Client reported redirect URI: '{client_redirect_uri}'")
         
         # Validate inputs
         if not code:
@@ -683,18 +685,18 @@ def whatsapp_signup_callback():
         
         # Try with client-provided redirect URI first if available
         if client_redirect_uri:
-            print("LOGGER" +f"Trying with client-provided URI first: {client_redirect_uri}")
+            print("LOGGER " +f"Trying with client-provided URI first: {client_redirect_uri}")
             # Rest of the code for token exchange...
         
         # If that doesn't work or no client URI provided, use our calculated one
-        print("LOGGER" +f"Attempting code exchange")
+        print("LOGGER " +f"Attempting code exchange")
         system_user_id, system_token = exchange_code_for_wa_token(code)
         
         # ...existing code...
 
         return jsonify({'success': True})
     except Exception as e:
-        print("LOGGER" +f"Error processing WhatsApp sign-up: {str(e)}")
+        print("LOGGER " +f"Error processing WhatsApp sign-up: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def exchange_code_for_wa_token(code):
@@ -704,43 +706,72 @@ def exchange_code_for_wa_token(code):
         app_id = os.getenv('WA_META_APP_ID')
         app_secret = os.getenv('WA_APP_CLIENT_SECRET', '')
         
-        # IMPORTANT FIX: Manually create the exact same redirect URI with consistent trailing slash handling
-        # Facebook uses /whatsapp-signup WITHOUT trailing slash
-        base_url = request.url_root.rstrip('/')  # Remove any trailing slash
-        redirect_uri = f"{base_url}/whatsapp-signup"  # Add path without trailing slash
-        
-        # Make sure we're using HTTPS
-        if redirect_uri.startswith('http:'):
-            redirect_uri = 'https:' + redirect_uri[5:]
-            
-        print("LOGGER" +f"EXACT Redirect URI being used: '{redirect_uri}'")
-        
-        # Log the fallback URI from the actual Facebook URL for comparison
-        print("LOGGER" +f"Expected fallback URI: 'https://steady-perch-evidently.ngrok-free.app/whatsapp-signup'")
-
-        # Exchange code for access token using Meta Graph API
-        response = requests.get(
-            'https://graph.facebook.com/v22.0/oauth/access_token',
-            params={
-                'client_id': app_id,
-                'client_secret': app_secret,
-                'redirect_uri': redirect_uri,
-                'code': code
-            }
-        )
-        
-        # Log complete request for debugging
-        print("LOGGER" +f"Token exchange request URL: {response.request.url}")
-        
-        if response.status_code != 200:
-            print("LOGGER" +f"Error exchanging code: {response.text}")
+        # CRITICAL: Use EXACT URI from environment without ANY manipulation
+        redirect_uri = os.getenv('WA_REDIRECT_URI')
+        if not redirect_uri:
+            print("ERROR: WA_REDIRECT_URI not set in .env file.")
             return None, None
             
+        # IMPROVED LOGGING: Log token exchange URI (should match the OAuth dialog request URI)
+        print(f"[2] Token exchange redirect_uri: '{redirect_uri}'")
+        print("===== END URI COMPARISON =====")
+        
+        # CRITICAL CHANGE: Try both POST with JSON body and GET with query parameters
+        try:
+            # First try POST method with JSON body
+            headers = {
+                'Content-Type': 'application/json'
+            }
+            
+            payload = {
+                'client_id': app_id,
+                'client_secret': app_secret,
+                'code': code,
+                'grant_type': 'authorization_code',
+                'redirect_uri': redirect_uri
+            }
+            
+            print("Attempting POST request for token exchange")
+            response = requests.post(
+                'https://graph.facebook.com/v22.0/oauth/access_token',
+                headers=headers,
+                json=payload
+            )
+            
+            # Log request details for debugging
+            print(f"POST request URL: {response.request.url}")
+            print(f"POST request body: {payload}")
+        
+        except Exception as post_error:
+            print(f"POST request failed: {post_error}")
+            # If POST fails, fall back to GET
+            print("Falling back to GET request")
+            response = requests.get(
+                'https://graph.facebook.com/v22.0/oauth/access_token',
+                params={
+                    'client_id': app_id,
+                    'client_secret': app_secret,
+                    'redirect_uri': redirect_uri,
+                    'code': code,
+                    'grant_type': 'authorization_code'
+                }
+            )
+            
+        # Log response
+        print(f"Token exchange response status: {response.status_code}")
+        print(f"Token exchange response: {response.text}")
+        
+        if response.status_code != 200:
+            print(f"Error exchanging code: {response.text}")
+            return None, None
+            
+        # ... rest of the function unchanged ...
+
         token_data = response.json()
         access_token = token_data.get('access_token')
         
         if not access_token:
-            print("LOGGER" +"No access token in response")
+            print("LOGGER " +"No access token in response")
             return None, None
         
         # Get system user ID from the token
@@ -753,20 +784,20 @@ def exchange_code_for_wa_token(code):
         )
         
         if user_response.status_code != 200:
-            print("LOGGER" +f"Error getting user info: {user_response.text}")
+            print("LOGGER " +f"Error getting user info: {user_response.text}")
             return None, None
             
         user_data = user_response.json()
         system_user_id = user_data.get('id')
         
         if not system_user_id:
-            print("LOGGER" +"No system user ID in response")
+            print("LOGGER " +"No system user ID in response")
             return None, None
             
         return system_user_id, access_token
         
     except Exception as e:
-        print("LOGGER" +f"Exception in exchange_code_for_wa_token: {str(e)}")
+        print("LOGGER " +f"Exception in exchange_code_for_wa_token: {str(e)}")
         return None, None
 
 def get_whatsapp_business_info(system_user_id, access_token):
@@ -781,11 +812,10 @@ def get_whatsapp_business_info(system_user_id, access_token):
         )
         
         if response.status_code != 200:
-            print("LOGGER" +f"Error getting accounts: {response.text}")
+            print("LOGGER " +f"Error getting accounts: {response.text}")
             return None
             
         accounts_data = response.json()
-        
         # Find WhatsApp Business Account
         for account in accounts_data.get('data', []):
             if account.get('category') == 'WhatsApp Business Account':
@@ -807,11 +837,9 @@ def get_whatsapp_business_info(system_user_id, access_token):
                             'wabaId': waba_id,
                             'phoneNumberId': phone_number_id
                         }
-        
         return None
-        
     except Exception as e:
-        print("LOGGER" +f"Exception in get_whatsapp_business_info: {str(e)}")
+        print("LOGGER " +f"Exception in get_whatsapp_business_info: {str(e)}")
         return None
 
 @app.route('/whatsapp-success')
@@ -825,13 +853,13 @@ def whatsapp_success():
         try:
             # Try to exchange the code for a token
             system_user_id, access_token = exchange_code_for_wa_token(code)
-            phone_number_id = waba_info.get('phoneNumberId')
             
             if system_user_id and access_token:
                 # Try to get WhatsApp Business info
                 waba_info = get_whatsapp_business_info(system_user_id, access_token)
                 
                 if waba_info:
+                    phone_number_id = waba_info.get('phoneNumberId')
                     # Save the WhatsApp business info
                     save_whatsapp_business(
                         waba_id=waba_info.get('wabaId'),
@@ -843,12 +871,11 @@ def whatsapp_success():
                     session['whatsapp_connected'] = True
                 
                 return render_template('whatsapp_success.html', phone_number_id=phone_number_id)
-            
         except Exception as e:
-            print("LOGGER WARNING" +f"Could not process code on success page: {e}")
+            print("LOGGER  WARNING" +f"Could not process code on success page: {e}")
             # We'll still show the success page even if code processing fails
     
-    return render_template('whatsapp_success.html')
+    return render_template('whatsapp_signup.html')
 
 @app.route('/whatsapp-error')
 def whatsapp_error():
@@ -873,11 +900,10 @@ def get_whatsapp_system_user_token(system_user_id):
             data = response.json()
             return data.get('access_token')
         
-        print("LOGGER" +f"Error getting system user token: {response.text}")
+        print("LOGGER " +f"Error getting system user token: {response.text}")
         return None
-        
     except Exception as e:
-        print("LOGGER" +f"Exception getting system user token: {e}")
+        print("LOGGER " +f"Exception getting system user token: {e}")
         return None
 
 def save_whatsapp_business(waba_id, phone_number_id, system_user_id, access_token):
@@ -892,54 +918,65 @@ def save_whatsapp_business(waba_id, phone_number_id, system_user_id, access_toke
             waba_id=waba_id,
             system_user_id=system_user_id
         )
-        
         return True
     except Exception as e:
-        print("LOGGER" +f"Error saving WhatsApp business: {e}")
+        print("LOGGER " +f"Error saving WhatsApp business: {e}")
         return False
 
 @app.before_request
 def log_request_info():
     """Log all request details to help debug Facebook redirects"""
     g.request_start_time = time.time()
-    
-    # Log all request details
-    print("LOGGER INFO" +f"Request URL: {request.url}")
-    print("LOGGER INFO" +f"Request Method: {request.method}")
-    print("LOGGER INFO" +f"Request Headers: {dict(request.headers)}")
-    print("LOGGER INFO" +f"Request Args: {dict(request.args)}")
+    print("LOGGER  INFO" +f"Request URL: {request.url}")
+    print("LOGGER  INFO" +f"Request Method: {request.method}")
+    print("LOGGER  INFO" +f"Request Headers: {dict(request.headers)}")
+    print("LOGGER  INFO" +f"Request Args: {dict(request.args)}")
     
     if request.url.endswith('whatsapp-success') or 'callback' in request.url:
-        print("LOGGER INFO" +f"OAUTH REDIRECT URL DETECTED: {request.url}")
-        print("LOGGER INFO" +f"Query Parameters: {dict(request.args)}")
+        print("LOGGER  INFO" +f"OAUTH REDIRECT URL DETECTED: {request.url}")
+        print("LOGGER  INFO" +f"Query Parameters: {dict(request.args)}")
 
 @app.after_request
 def log_response_info(response):
     """Log response details"""
     if hasattr(g, 'request_start_time'):
         duration = time.time() - g.request_start_time
-        print("LOGGER INFO" +f"Request duration: {duration:.2f}s")
-        print("LOGGER INFO" +f"Response Status: {response.status_code}")
-        
+        print("LOGGER  INFO" +f"Request duration: {duration:.2f}s")
+        print("LOGGER  INFO" +f"Response Status: {response.status_code}")
     return response
 
 # Add a wildcard route to catch any Facebook redirects
 @app.route('/<path:path>')
 def catch_all(path):
     """Catch-all route to log Facebook redirects"""
-    print("LOGGER WARNING" +f"Unhandled path accessed: /{path}")
-    print("LOGGER WARNING" +f"Full URL: {request.url}")
-    print("LOGGER WARNING" +f"Query Parameters: {dict(request.args)}")
+    print("LOGGER  WARNING" +f"Unhandled path accessed: /{path}")
+    print("LOGGER  WARNING" +f"Full URL: {request.url}")
+    print("LOGGER  WARNING" +f"Query Parameters: {dict(request.args)}")
     
     # If this seems like an OAuth redirect, log it clearly
     if 'code' in request.args:
-        print("LOGGER WARNING" +f"POTENTIAL MISSED OAUTH REDIRECT: {request.url}")
-    
-    # Redirect to whatsapp success page if it seems like an OAuth redirect
-    if 'code' in request.args:
+        print("LOGGER  WARNING" +f"POTENTIAL MISSED OAUTH REDIRECT: {request.url}")
         return redirect(url_for('whatsapp_success', code=request.args.get('code')))
     
     return "Page not found", 404
+
+# At the end of the file, add the route for OAuth debugging
+@app.route('/oauth-debug')
+@login_required
+def oauth_debug():
+    """Debug page for OAuth configuration"""
+    # Get the environment variable
+    env_redirect_uri = os.getenv('WA_REDIRECT_URI', '')
+    
+    # Generate what we would use if no env variable
+    base_url = request.url_root.rstrip('/')
+    generated_uri = f"{base_url}/whatsapp-signup"
+    if generated_uri.startswith('http:'):
+        generated_uri = 'https:' + generated_uri[5:]
+    
+    return render_template('oauth_debug.html',
+                          env_redirect_uri=env_redirect_uri,
+                          generated_uri=generated_uri)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 7777))

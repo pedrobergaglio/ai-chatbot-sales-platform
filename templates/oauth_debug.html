@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}OAuth Debug{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-10">
+    <h1 class="text-3xl font-bold mb-8 text-center">OAuth Configuration Debug</h1>
+    
+    <div class="bg-secondary p-6 rounded-lg mb-8">
+        <h2 class="text-2xl font-semibold mb-4">Redirect URI Configuration</h2>
+        
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-2">Environment Variable (.env)</h3>
+            <div class="bg-gray-800 p-3 rounded flex items-center">
+                <code class="text-green-400 break-all">{{ env_redirect_uri }}</code>
+                {% if not env_redirect_uri %}
+                <span class="ml-2 text-yellow-500">Not configured in .env file</span>
+                {% endif %}
+            </div>
+            <p class="text-sm text-gray-400 mt-1">WA_REDIRECT_URI in your .env file</p>
+        </div>
+        
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-2">Generated Redirect URI</h3>
+            <div class="bg-gray-800 p-3 rounded">
+                <code class="text-blue-400 break-all">{{ generated_uri }}</code>
+            </div>
+            <p class="text-sm text-gray-400 mt-1">This is the URI generated from your application URL</p>
+        </div>
+        
+        <div class="bg-red-900/30 p-4 rounded-lg mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-red-300">Common URI Problems</h3>
+            <ul class="list-disc pl-6 space-y-2 text-gray-300">
+                <li>Trailing slashes: <code class="bg-gray-800 px-2">example.com/path</code> vs <code class="bg-gray-800 px-2">example.com/path/</code></li>
+                <li>Protocol: <code class="bg-gray-800 px-2">http://</code> vs <code class="bg-gray-800 px-2">https://</code></li>
+                <li>Subdomains: <code class="bg-gray-800 px-2">example.com</code> vs <code class="bg-gray-800 px-2">www.example.com</code></li>
+                <li>URL encoding: Spaces or special characters encoded differently</li>
+                <li>Case sensitivity: <code class="bg-gray-800 px-2">/path</code> vs <code class="bg-gray-800 px-2">/Path</code></li>
+            </ul>
+        </div>
+        
+        <div class="bg-green-900/30 p-4 rounded-lg">
+            <h3 class="text-lg font-semibold mb-2 text-green-300">Solution</h3>
+            <p class="mb-4 text-gray-300">Set the exact URI in your .env file:</p>
+            <div class="bg-gray-800 p-3 rounded">
+                <code>WA_REDIRECT_URI=https://steady-perch-evidently.ngrok-free.app/whatsapp-signup</code>
+            </div>
+            <p class="text-sm text-gray-400 mt-2">Make sure this matches EXACTLY what's in the Facebook Developer Console!</p>
+        </div>
+    </div>
+    
+    <div class="text-center">
+        <a href="{{ url_for('dashboard') }}" class="inline-block bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

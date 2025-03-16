@@ -175,13 +175,20 @@
             const code = response.authResponse.code;
             logDebug('Received authorization code: ' + code);
             
-            // Prepare data to send to server
+            // This must match EXACTLY what's registered with Facebook
             const dataToSend = {
                 code: code,
-                // Important: Send the EXACT redirect URI without trailing slash
-                redirectUri: window.location.origin + '/whatsapp-signup',  // Fixed format
-                callbackUrl: window.location.href  // Send the current URL too
+                redirectUri: '{{ redirect_uri }}',  // Use exact URI from server
+                callbackUrl: window.location.href
             };
+            
+            // Enhanced logging for URI comparison
+            console.log("===== CLIENT-SIDE OAUTH URI ====="); 
+            console.log(`[1] OAuth dialog request URI (client): '{{ redirect_uri }}'`);
+            logDebug('Using redirect URI for token exchange', dataToSend.redirectUri);
+            
+            // Log the exact URI being used
+            logDebug('Using EXACT redirect URI: ' + dataToSend.redirectUri);
             
             // If we have WABA ID and phone number ID from message event, include those
             if (signupData.wabaId && signupData.phoneNumberId) {
