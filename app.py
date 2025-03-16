@@ -448,11 +448,20 @@ def webhook():
                             return 'No valid token found', 400
                             
                         # Handle message with Instagram handler
-                        handler = InstagramMessageHandler(token_to_use, recipient_id)
-                        if handler.handle_incoming_message(sender_id, text):
-                            return 'EVENT_RECEIVED'
-                        else:
-                            return 'Failed to process message', 400
+                        try:
+                            # Create handler without proxies
+                            handler = InstagramMessageHandler(token_to_use, recipient_id)
+                            if handler.handle_incoming_message(sender_id, text):
+                                return 'EVENT_RECEIVED'
+                            else:
+                                return 'Failed to process message', 400
+                        except Exception as e:
+                            print(f"Error in webhook handler: {str(e)}")
+                            print(f"Error type: {type(e)}")
+                            # Log additional error information
+                            import traceback
+                            print(traceback.format_exc())
+                            return Response('Bad Request', status=400)
                         
             return 'EVENT_RECEIVED'
         except Exception as e:

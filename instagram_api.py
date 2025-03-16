@@ -50,11 +50,6 @@ class InstagramAPI:
             "Content-Type": "application/json"
         }
         
-        """ # Add token to parameters instead of headers (more reliable)
-        params = {
-            "access_token": self.access_token
-        } """
-        
         payload = {
             "recipient": {
                 "id": str(recipient_id)
@@ -67,9 +62,14 @@ class InstagramAPI:
         print(f"Sending message to {recipient_id}: {message_text[:100]}...")
         
         try:
-            # Make the API request
-            response = requests.post(url, json=payload, headers=headers)
-            #response = requests.post(url, json=payload, params=params, headers=headers)
+            # Make the API request with explicit arguments, avoiding proxy issues
+            response = requests.post(
+                url, 
+                json=payload, 
+                headers=headers,
+                # Explicitly set proxies to None to override environment settings
+                proxies=None
+            )
             
             # Debug the response
             print(f"Response status: {response.status_code}")

@@ -45,8 +45,10 @@ class BaseMessageHandler:
 class InstagramMessageHandler(BaseMessageHandler):
     """Instagram-specific message handler"""
     
-    def __init__(self, access_token, ig_user_id):
+    def __init__(self, access_token, ig_user_id, **kwargs):
+        # Initialize BaseMessageHandler but ignore extra kwargs
         super().__init__()
+        # Create Instagram API without passing unexpected kwargs
         self.instagram = InstagramAPI(access_token, ig_user_id)
         self.platform = 'instagram'
     
