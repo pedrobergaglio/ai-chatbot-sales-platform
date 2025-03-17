@@ -2,32 +2,27 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 from database import get_db
+import httpx
 
 load_dotenv()
 
 class ThreadManager:
     def __init__(self):
-        # Clean environment variables of any proxy settings before initializing OpenAI
-        env_vars_to_clear = [
-            'http_proxy', 'HTTP_PROXY',
-            'https_proxy', 'HTTPS_PROXY',
-            'no_proxy', 'NO_PROXY'
-        ]
+        # Create a custom HTTP client with no proxies
+        http_client = httpx.Client(
+            base_url="https://api.openai.com/v1",
+            follow_redirects=True,
+            # Explicitly specify no proxies
+            proxies=None,
+            # Ensure timeouts are set
+            timeout=httpx.Timeout(60.0)
+        )
         
-        # Save original env vars to restore later
-        original_env = {}
-        for var in env_vars_to_clear:
-            if var in os.environ:
-                original_env[var] = os.environ[var]
-                del os.environ[var]
-        
-        # Initialize OpenAI client without proxy settings
-        try:
-            self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-        finally:
-            # Restore original environment variables
-            for var, value in original_env.items():
-                os.environ[var] = value
+        # Initialize OpenAI client with custom HTTP client
+        self.client = OpenAI(
+            api_key=os.getenv('OPENAI_API_KEY'),
+            http_client=http_client
+        )
         
         self.system_message = """You are a professional sales consultant for 'Soluciones Sauco', 
         a software company specializing in digital transformation solutions. 
