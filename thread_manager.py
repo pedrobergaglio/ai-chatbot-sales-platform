@@ -8,21 +8,20 @@ load_dotenv()
 
 class ThreadManager:
     def __init__(self):
-        # Create a custom HTTP client with no proxies
-        http_client = httpx.Client(
-            base_url="https://api.openai.com/v1",
-            follow_redirects=True,
-            # Explicitly specify no proxies
-            proxies=None,
-            # Ensure timeouts are set
-            timeout=httpx.Timeout(60.0)
-        )
-        
-        # Initialize OpenAI client with custom HTTP client
-        self.client = OpenAI(
-            api_key=os.getenv('OPENAI_API_KEY'),
-            http_client=http_client
-        )
+        # Initialize OpenAI client without using httpx directly
+        try:
+            # Simple initialization without custom client
+            self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+            
+            # Print httpx version for debugging
+            print(f"Using httpx version: {httpx.__version__}")
+            
+        except Exception as e:
+            print(f"Error initializing OpenAI client: {e}")
+            # Emergency fallback
+            import openai
+            openai.api_key = os.getenv('OPENAI_API_KEY')
+            self.client = openai
         
         self.system_message = """You are a professional sales consultant for 'Soluciones Sauco', 
         a software company specializing in digital transformation solutions. 
