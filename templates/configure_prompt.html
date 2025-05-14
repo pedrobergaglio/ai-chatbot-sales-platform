@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Configure System Prompt{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Configure System Prompt</h1>
+        <a href="{{ url_for('dashboard') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+            Back to Dashboard
+        </a>
+    </div>
+
+    {% if success %}
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+        <p>System prompt updated successfully!</p>
+    </div>
+    {% endif %}
+
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <form action="{{ url_for('configure_prompt') }}" method="POST">
+            <div class="mb-4">
+                <label for="system_prompt" class="block text-gray-700 text-sm font-bold mb-2">
+                    System Prompt
+                </label>
+                <textarea id="system_prompt" name="system_prompt" rows="15" 
+                          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                          placeholder="Enter the system prompt here...">{{ current_prompt }}</textarea>
+                <p class="text-gray-500 text-sm mt-2">
+                    This prompt defines how the AI assistant will respond to user messages.
+                </p>
+            </div>
+            
+            <div class="flex items-center justify-between mt-6">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Save Prompt
+                </button>
+                <button type="button" id="reset-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Reset to Default
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-gray-50 rounded-lg p-6">
+        <h2 class="text-xl font-bold text-gray-700 mb-4">Default Prompt</h2>
+        <pre class="whitespace-pre-wrap bg-gray-100 p-4 rounded text-sm">{{ default_prompt }}</pre>
+    </div>
+</div>
+
+<script>
+    document.getElementById('reset-btn').addEventListener('click', function() {
+        document.getElementById('system_prompt').value = `{{ default_prompt|safe }}`;
+    });
+</script>
+{% endblock %}

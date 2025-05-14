@@ -1,40 +1,40 @@
 {% extends "base.html" %}
 
-{% block title %}WhatsApp Business Registration{% endblock %}
+{% block title %}Registro de WhatsApp Business{% endblock %}
 
 {% block content %}
 <div class="flex flex-col items-center justify-center min-h-[80vh] max-w-4xl mx-auto">
-    <div class="bg-secondary p-8 rounded-lg shadow-lg w-full">
-        <h1 class="text-2xl font-bold mb-6 text-center">WhatsApp Business Registration</h1>
+    <div class="bg-gray-100 dark:bg-secondary p-8 rounded-lg shadow-lg w-full">
+        <h1 class="text-2xl font-bold mb-6 text-black dark:text-white text-center">Registro de WhatsApp Business</h1>
         
         <!-- Debug info - shows in development only -->
-        <!-- <div class="mb-4 p-4 bg-gray-800 rounded-lg text-xs overflow-auto">
-            <p>App ID: {{ app_id or 'Not set' }}</p>
-            <p>Configuration ID: {{ config_id or 'Not set' }}</p>
-            <p>Success URL: {{ success_url }}</p>
-            <p>Error URL: {{ error_url }}</p>
+        <!-- <div class="mb-4 p-4 bg-gray-200 dark:bg-gray-800 rounded-lg text-xs overflow-auto">
+            <p class="text-gray-900 dark:text-white">App ID: {{ app_id or 'Not set' }}</p>
+            <p class="text-gray-900 dark:text-white">Configuration ID: {{ config_id or 'Not set' }}</p>
+            <p class="text-gray-900 dark:text-white">Success URL: {{ success_url }}</p>
+            <p class="text-gray-900 dark:text-white">Error URL: {{ error_url }}</p>
             <div id="debug-log" class="mt-2"></div>
         </div> -->
         
         <div class="mb-8">
-            <p class="text-gray-400 mb-6">
-                Connect your business with WhatsApp to enable automated messaging through our platform.
-                This process allows us to send messages on behalf of your business.
+            <p class="text-gray-600 dark:text-gray-400 mb-6">
+                Conectá tu negocio con WhatsApp para habilitar la mensajería automatizada a través de nuestra plataforma.
+                Este proceso nos permite enviar mensajes en nombre de tu negocio.
             </p>
             
-            <div class="bg-gray-800 p-6 rounded-lg mb-6">
-                <h2 class="text-lg font-semibold mb-4">What happens during setup:</h2>
-                <ol class="list-decimal list-inside space-y-2 text-gray-300">
-                    <li>You'll connect your WhatsApp business account</li>
-                    <li>Verify your business information</li>
-                    <li>Select which phone numbers to use with our platform</li>
-                    <li>Authorize our application to send messages</li>
+            <div class="bg-gray-200 dark:bg-gray-800 p-6 rounded-lg mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-black dark:text-white">Qué sucede durante la configuración:</h2>
+                <ol class="list-decimal list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                    <li>Vas a conectar tu cuenta business de WhatsApp</li>
+                    <li>Verificar la información de tu negocio</li>
+                    <li>Seleccionar qué números de teléfono usar con nuestra plataforma</li>
+                    <li>Autorizar a nuestra aplicación para enviar mensajes</li>
                 </ol>
             </div>
             
             <!-- WhatsApp Sign-up UI -->
-            <div id="whatsapp-signup-container" class="min-h-[200px] w-full flex flex-col items-center justify-center bg-gray-900 border border-gray-700 rounded-lg p-6">
-                <p class="text-gray-400 mb-4">Click the button below to connect your WhatsApp Business Account</p>
+            <div id="whatsapp-signup-container" class="min-h-[200px] w-full flex flex-col items-center justify-center bg-gray-200 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-6">
+                <p class="text-gray-600 dark:text-gray-400 mb-4">Hacé clic en el botón de abajo para conectar tu Cuenta Business de WhatsApp</p>
                 
                 <!-- Launch button styled to match your UI -->
                 <button id="wa-signup-button" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center">
@@ -42,26 +42,26 @@
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"></path>
                         <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22c-5.523 0-10-4.477-10-10S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"></path>
                     </svg>
-                    Connect WhatsApp Business
+                    Conectar WhatsApp Business
                 </button>
                 
-                <p id="loading-status" class="text-sm text-gray-500 mt-4"></p>
+                <p id="loading-status" class="text-sm text-gray-500 dark:text-gray-400 mt-4"></p>
             </div>
         </div>
         
         <div class="text-center">
-            <p class="text-gray-400 mb-4">
-                Need help? <a href="#" class="text-blue-400 hover:underline">Contact our support team</a>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+                ¿Necesitás ayuda? <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline">Contactá a nuestro equipo de soporte</a>
             </p>
-            <a href="{{ url_for('index') }}" class="text-gray-400 hover:text-white">
-                ← Back to dashboard
+            <a href="{{ url_for('index') }}" class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                ← Volver al panel de control
             </a>
         </div>
     </div>
 </div>
 
 <!-- Standard Facebook SDK loading (as per documentation) -->
-<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js"></script>
 
 <script>
     // Debug logging function
@@ -103,7 +103,7 @@
     
     // Initialize Facebook SDK
     window.fbAsyncInit = function() {
-        logDebug("SDK loaded, initializing...");
+        logDebug("SDK cargado, inicializando...");
         
         try {
             // Initialize the SDK with exact supported features
@@ -116,17 +116,17 @@
                 status: true   // Check login status
             });
             
-            logDebug("FB SDK initialized successfully");
+            logDebug("FB SDK inicializado correctamente");
             
             // Handle any redirect that might have happened
             FB.getLoginStatus(function(response) {
-                logDebug("Login status checked", response);
+                logDebug("Estado de login verificado", response);
             });
             
             // Enable the button after SDK is loaded
             document.getElementById('wa-signup-button').addEventListener('click', launchWhatsAppSignup);
         } catch (error) {
-            logDebug("Error initializing FB SDK: " + error.message);
+            logDebug("Error inicializando FB SDK: " + error.message);
         }
     };
     
@@ -229,27 +229,27 @@
                 logDebug('Error processing response: ' + error);
                 
                 // Show error message
-                document.getElementById('loading-status').innerText = 'Error: Failed to process signup';
+                document.getElementById('loading-status').innerText = 'Error: Falló el procesamiento del registro';
                 document.getElementById('loading-status').classList.add('text-red-500');
             });
         } else {
             logDebug('Login failed or was cancelled', response);
-            document.getElementById('loading-status').innerText = 'Login failed or was cancelled';
+            document.getElementById('loading-status').innerText = 'Login fallido o cancelado';
         }
     };
     
     // Launch method for WhatsApp signup
     const launchWhatsAppSignup = () => {
-        logDebug('Launching WhatsApp signup...');
+        logDebug('Lanzando registro de WhatsApp...');
         
         // Update UI to indicate loading
-        document.getElementById('loading-status').innerText = 'Launching WhatsApp signup...';
+        document.getElementById('loading-status').innerText = 'Lanzando registro de WhatsApp...';
         document.getElementById('wa-signup-button').disabled = true;
         
         // Check if FB is available
         if (typeof FB === 'undefined') {
             logDebug('Facebook SDK not loaded yet');
-            document.getElementById('loading-status').innerText = 'Facebook SDK not loaded yet. Please try again.';
+            document.getElementById('loading-status').innerText = 'El SDK de Facebook aún no cargó. Por favor, intentá de nuevo.';
             document.getElementById('wa-signup-button').disabled = false;
             return;
         }

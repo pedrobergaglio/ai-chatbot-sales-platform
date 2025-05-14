@@ -18,6 +18,7 @@ from database import (
 from instagram_api import InstagramAPI
 from whatsapp_api import WhatsAppAPI
 from message_handler import InstagramMessageHandler, WhatsAppMessageHandler
+from thread_manager import DEFAULT_SYSTEM_PROMPT, CURRENT_SYSTEM_PROMPT
 
 # Add this near the imports
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -272,6 +273,29 @@ def get_account_info(access_token):
 @login_required
 def dashboard():
     return render_template('dashboard.html')
+
+@app.route('/configure-prompt', methods=['GET', 'POST'])
+@login_required
+def configure_prompt():
+    """Configure AI system prompt"""
+    global CURRENT_SYSTEM_PROMPT
+    
+    if request.method == 'POST':
+        new_prompt = request.form.get('system_prompt')
+        if new_prompt:
+            # Update the global variable
+            CURRENT_SYSTEM_PROMPT = new_prompt
+            return redirect(url_for('configure_prompt', success=True))
+    
+    # Get the current system prompt
+    current_prompt = CURRENT_SYSTEM_PROMPT
+    default_prompt = DEFAULT_SYSTEM_PROMPT
+    success = 'success' in request.args
+    
+    return render_template('configure_prompt.html', 
+                          current_prompt=current_prompt,
+                          default_prompt=default_prompt,
+                          success=success)
 
 # HTMX partial routes for dynamic updates
 @app.route('/users/<status>')

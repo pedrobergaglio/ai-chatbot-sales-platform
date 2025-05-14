@@ -1,6 +1,6 @@
 <div class="flex flex-col h-full">
     <!-- Conversation header -->
-    <div class="border-b border-gray-700 p-4 flex justify-between items-center">
+    <div class="border-b border-gray-300 dark:border-gray-700 p-4 flex justify-between items-center">
         <div class="flex items-center">
             <!-- Platform icon -->
             {% if user_info.platform == 'whatsapp' %}
@@ -19,13 +19,13 @@
             {% endif %}
             
             <div>
-                <h2 class="text-xl font-semibold">{{ user_info.username or 'User ' + sender_id }}</h2>
+                <h2 class="text-xl font-semibold text-black dark:text-white">{{ user_info.username or 'Usuario ' + sender_id }}</h2>
                 <div class="flex items-center">
-                    <span class="text-sm text-gray-400">Status:</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Estado:</span>
                     {% if status == 'human' %}
-                        <span class="ml-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full">Human needed</span>
+                        <span class="ml-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full">Necesita humano</span>
                     {% else %}
-                        <span class="ml-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full">Handled by AI</span>
+                        <span class="ml-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full">Gestionado por IA</span>
                     {% endif %}
                 </div>
             </div>
@@ -35,10 +35,10 @@
         <div class="text-sm">
             <label class="inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="auto-refresh-{{ sender_id }}" class="sr-only" checked>
-                <div class="relative w-11 h-6 bg-gray-700 rounded-full toggle-bg">
+                <div class="relative w-11 h-6 bg-gray-300 dark:bg-gray-700 rounded-full toggle-bg">
                     <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"></div>
                 </div>
-                <span class="ml-2 text-gray-300">Auto-refresh</span>
+                <span class="ml-2 text-gray-700 dark:text-gray-300">Actualizar auto</span>
             </label>
         </div>
     </div>
@@ -46,16 +46,16 @@
     <!-- Messages container -->
     <div id="messages-container" class="flex-grow p-4 overflow-y-auto conversation-container">
         {% for msg in messages %}
-        <div class="{% if msg.is_from_me %}message-sent{% else %}message-received{% endif %} chat-message">
+        <div class="p-4 rounded-lg my-2 max-w-[75%] break-words text-black dark:text-white {% if msg.is_from_me %}bg-primary text-white ml-auto{% else %}bg-gray-200 dark:bg-secondary mr-auto{% endif %}">
             <div>{{ msg.message }}</div>
-            <div class="timestamp">{{ msg.timestamp }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ msg.timestamp }}</div>
         </div>
         {% endfor %}
     </div>
     
     <!-- Message input - only show for human conversations -->
     {% if status == 'human' %}
-    <div class="border-t border-gray-700 p-4">
+    <div class="border-t border-gray-300 dark:border-gray-700 p-4">
         <form hx-post="{{ url_for('send_message') }}"
               hx-target="#conversation"
               hx-swap="innerHTML"
@@ -64,14 +64,14 @@
             <input type="hidden" name="platform" value="{{ user_info.platform or 'instagram' }}">
             
             <textarea name="message"
-                     class="w-full p-3 bg-secondary border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                     placeholder="Type your message here..."
+                     class="w-full p-3 bg-white dark:bg-secondary border border-gray-300 dark:border-gray-700 text-black dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
+                     placeholder="Escribí tu mensaje acá..."
                      rows="3"></textarea>
             
             <div class="flex space-x-2">
                 <button type="submit"
                        class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg flex-grow">
-                    Send Message
+                    Enviar Mensaje
                 </button>
                 <button type="button"
                        class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg"
@@ -79,7 +79,7 @@
                        hx-target="#conversation"
                        hx-swap="innerHTML"
                        hx-vals='{"sender_id": "{{ sender_id }}"}'>
-                    Return to Assistant
+                    Volver al Asistente
                 </button>
             </div>
         </form>
